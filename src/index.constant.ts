@@ -1,0 +1,12 @@
+export const HEALTHCHECK = "healthcheck";
+export const ONGOING = "ongoing";
+export const CONNECTION = "connect";
+export const SOCKET_CONNECTION = "socket_connection";
+export const AUTHENTICATION = "authentication";
+export const ONGOING_SESSION_DATA = "ongoing_session_data";
+export const SESSION_DATA = "mark_attendance";
+export const SESSION_ENDED = "session_ended";
+export const DJANGOCLIENT = "django";
+export const FECLIENT = "FE";
+export const SUCCESS_STATUS_CODE = 200;
+export const ERROR = "client_error";

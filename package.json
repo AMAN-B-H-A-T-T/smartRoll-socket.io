@@ -1,0 +1,19 @@
+{
+  "name": "smartroll-socket",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "socket.io": "^4.8.1"
+  }
+}

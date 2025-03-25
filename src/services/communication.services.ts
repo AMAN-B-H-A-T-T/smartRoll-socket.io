@@ -283,5 +283,30 @@ class CommunicationService {
       );
     }
   }
+
+  handletSessionEndedEvent(message: IEventData) {
+    try {
+      //todo: distrucutre the data from the event message
+      const { session_id, status, data, auth_token } = message;
+      //todo: validate the user session_id and auth_token
+      const payload = {
+        session_id: session_id,
+        auth_token: auth_token,
+      };
+      //todo: send the request to clinet = DJANGO to end the session
+      ServerSocketService.sendMessage(
+        SESSION_ENDED,
+        DJANGOCLIENT,
+        SUCCESS_STATUS_CODE,
+        data,
+        this.serverSocket.socketInstance,
+        "req"
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At handletSessionEndedEvent(clinet - FE) - ${error.message}`
+      );
+    }
+  }
 }
 export default CommunicationService;

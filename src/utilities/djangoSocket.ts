@@ -7,6 +7,7 @@ class ServerSocket {
   serverIoInstance!: Server;
   socketInstance!: Socket;
   serverSocketNamespace!: Namespace;
+  serverReconnectionTimeLimit: any = null;
 
   constructor(io: Server) {
     this.serverIoInstance = io;
@@ -18,6 +19,7 @@ class ServerSocket {
     this.serverSocketNamespace.on(CONNECTION, (socket: Socket) => {
       try {
         console.log("connection");
+        this.clearServerDisconnectionTimeOut();
         this.socketInstance = socket;
         new ServerSocketController(socket, this);
       } catch (error: any) {
@@ -33,6 +35,25 @@ class ServerSocket {
 
   setConnectionStatus(val: boolean) {
     this.connection_state = val;
+  }
+  setServerReconnectionTimeLimit(timeOut: any) {
+    this.serverReconnectionTimeLimit = timeOut;
+  }
+  getServerReconnectionTimeLimit() {
+    return this.serverReconnectionTimeLimit;
+  }
+
+  clearServerDisconnectionTimeOut() {
+    if (this.getServerReconnectionTimeLimit()) {
+      clearInterval(this.serverReconnectionTimeLimit);
+    }
+  }
+  handleServerDisconnectionTimeOut() {
+    this.setConnectionStatus(false);
+    const timeOut = setTimeout(() => {
+      globalThis.bunSocket.handleServerSocketDisconnection();
+    }, 10000);
+    this.setServerReconnectionTimeLimit(timeOut);
   }
 }
 

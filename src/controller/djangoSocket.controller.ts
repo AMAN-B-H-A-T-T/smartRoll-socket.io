@@ -10,12 +10,13 @@ import {
   SUCCESS_STATUS_CODE,
 } from "../index.constant";
 import ServerSocketService from "../services/djangoSocket.services";
-import type { IEventData, IEventMessage } from "../index.types";
+import type { IEventMessage } from "../index.types";
 import type ServerSocket from "../utilities/djangoSocket";
 
 class ServerSocketController {
   socket!: Socket;
   socketInstance!: ServerSocket;
+
   constructor(socket: Socket, socketInstance: ServerSocket) {
     this.socket = socket;
     this.socketInstance = socketInstance;
@@ -106,7 +107,7 @@ class ServerSocketController {
      */
     this.socket.on("disconnect", () => {
       // this.socketInstance.connection_state = false;
-      globalThis.bunSocket.handleServerSocketDisconnection();
+      this.socketInstance.handleServerDisconnectionTimeOut();
       console.log(
         `disconnected successfully at time - ${Date.now().toString()}`
       );

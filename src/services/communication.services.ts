@@ -93,7 +93,6 @@ class CommunicationService {
       const { session_id, status, message, auth_token } = data as IEventData;
       // let socket: Socket | null = this.getSocketClientInstance(session_id);
       if (status_code === 500 && status === false) {
-        console.log("authentication error");
         ClientSocketServices.sendErrorMessageToRoom(
           message as string,
           session_id,
@@ -169,7 +168,6 @@ class CommunicationService {
     try {
       const { data } = messageEvent;
       const { session_id, data: studentData } = data as IEventData;
-      console.log(studentData);
       ClientSocketServices.sendMessageToClient(
         SESSION_DATA,
         SUCCESS_STATUS_CODE,
@@ -337,10 +335,6 @@ class CommunicationService {
   }
 
   serverRegularizationEventHandler(messageEvent: IEventMessage) {
-    console.log(
-      "🚀 ~ CommunicationService ~ serverRegularizationEventHandler ~ messageEvent:",
-      messageEvent
-    );
     try {
       const { status_code, data } = messageEvent;
       const { session_id, status, message } = data as IEventData;

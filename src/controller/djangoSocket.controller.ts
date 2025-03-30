@@ -35,7 +35,7 @@ class ServerSocketController {
       // this.socketInstance.connection_state = true;
 
       this.socketInstance.setConnectionStatus(true);
-      console.log(this.socketInstance.getConnectionStatus());
+    
       // emit the evetn : socket_connection to sever
       ServerSocketService.sendMessage(
         SOCKET_CONNECTION,
@@ -88,7 +88,7 @@ class ServerSocketController {
      */
     this.socket.on(SESSION_DATA, (messaege: IEventMessage) => {
       //todo: create the handler in communication srvices
-      console.log("object session");
+      
       globalThis.bunSocket.sessionDataHandler(messaege);
     });
 

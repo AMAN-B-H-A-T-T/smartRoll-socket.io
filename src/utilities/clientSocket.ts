@@ -27,7 +27,6 @@ class ClientSocket {
   setUpSocket() {
     this.clientNameSpace.on(CONNECTION, (socket: Socket) => {
       try {
-        console.log(this.serverSocket.getConnectionStatus());
         if (!this.serverSocket.getConnectionStatus()) {
           ClientSocketServices.sendErrorMessageToClient(
             "something went wrong",

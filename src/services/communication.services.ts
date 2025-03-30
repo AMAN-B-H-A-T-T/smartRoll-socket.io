@@ -340,7 +340,6 @@ class CommunicationService {
       const { session_id, status, message } = data as IEventData;
       // let socket: Socket | null = this.getSocketClientInstance(session_id);
       if (status_code !== 200 && status === false) {
-        console.log("object");
         ClientSocketServices.sendErrorMessageToRoom(
           message as string,
           session_id,
@@ -364,16 +363,11 @@ class CommunicationService {
   }
 
   serverRegularizationEventApprovedHandler(messageEvent: IEventMessage) {
-    console.log(
-      "🚀 ~ CommunicationService ~ serverRegularizationEventHandler ~ messageEvent:",
-      messageEvent
-    );
     try {
       const { status_code, data } = messageEvent;
       const { session_id, status, message } = data as IEventData;
       // let socket: Socket | null = this.getSocketClientInstance(session_id);
       if (status_code !== 200 && status === false) {
-        console.log("object");
         ClientSocketServices.sendErrorMessageToRoom(
           message as string,
           session_id,
@@ -424,7 +418,6 @@ class CommunicationService {
       const { session_id, status, message } = data as IEventData;
       // let socket: Socket | null = this.getSocketClientInstance(session_id);
       if (status_code !== 200 && status === false) {
-        console.log("object");
         ClientSocketServices.sendErrorMessageToRoom(
           message as string,
           session_id,

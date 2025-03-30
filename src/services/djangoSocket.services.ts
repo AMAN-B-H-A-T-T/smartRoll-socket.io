@@ -18,7 +18,6 @@ class ServerSocketService {
     };
     if (type === "req") {
       const obj = { ...data, client: DJANGOCLIENT };
-      console.log(obj);
       return socket && socket.emit(event, obj);
     }
 

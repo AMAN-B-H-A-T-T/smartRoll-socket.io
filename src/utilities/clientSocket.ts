@@ -2,17 +2,18 @@ import type { Namespace, Server, Socket } from "socket.io";
 import {
   CONNECTION,
   ERROR,
+  REGULARIZATION_REQUEST,
   SESSION_ENDED,
   SOCKET_CONNECTION,
 } from "../index.constant";
 import type ServerSocket from "./djangoSocket";
 import ClientSocketServices from "../services/clientSocket.services";
 import type { IEventData } from "../index.types";
-import SocketIoServives from "../controller/socketIo.controller";
+import SocketIoServices from "../controller/socketIo.controller";
 
-class ClinetSocket {
+class ClientSocket {
   io!: Server;
-  sessionMpas: Record<string, Socket> = {};
+  sessionMaps: Record<string, Socket> = {};
   serverSocket!: ServerSocket;
   clientNameSpace!: Namespace;
 
@@ -29,22 +30,22 @@ class ClinetSocket {
         console.log(this.serverSocket.getConnectionStatus());
         if (!this.serverSocket.getConnectionStatus()) {
           ClientSocketServices.sendErrorMessageToClient(
-            "please first connect to the backend server",
+            "something went wrong",
             socket,
             500
           );
           return socket.disconnect(true);
         }
 
-        const socketService: SocketIoServives = new SocketIoServives(
+        const socketService: SocketIoServices = new SocketIoServices(
           socket,
-          this.sessionMpas
+          this.sessionMaps
         );
 
         socket.on(SOCKET_CONNECTION, (message) => {
           const { session_id, auth_token } = message as IEventData;
           // check for null , undefined and empty
-          console.log(session_id, auth_token);
+
           if (
             !session_id ||
             !auth_token ||
@@ -62,7 +63,9 @@ class ClinetSocket {
           socketService.onOpenEventHandler(session_id, auth_token);
         });
 
-        socket.on(SESSION_ENDED, (message: string) => {});
+        socket.on(SESSION_ENDED, (message: string) => {
+          socketService.handleClientSessionEnded(message);
+        });
         socket.on("error", (error) => {
           console.log(error);
         });
@@ -74,6 +77,10 @@ class ClinetSocket {
         socket.on("disconnect", () => {
           socketService.onCloseEventHandler();
         });
+
+        socket.on(REGULARIZATION_REQUEST, (message: any) => {
+          socketService.regularizationAttendanceHandler(message);
+        });
       } catch (error) {
         socket.disconnect(true);
       }
@@ -81,8 +88,8 @@ class ClinetSocket {
   }
 
   cleanUpSessionMap() {
-    this.sessionMpas = {};
+    this.sessionMaps = {};
   }
 }
 
-export default ClinetSocket;
+export default ClientSocket;

@@ -10,3 +10,5 @@ export const DJANGOCLIENT = "django";
 export const FECLIENT = "FE";
 export const SUCCESS_STATUS_CODE = 200;
 export const ERROR = "client_error";
+export const REGULARIZATION_REQUEST = "regulization_request";
+export const REQUEST_APPROVED = "regulization_approved";

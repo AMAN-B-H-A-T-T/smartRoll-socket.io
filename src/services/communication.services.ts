@@ -5,6 +5,8 @@ import {
   ERROR,
   FECLIENT,
   ONGOING_SESSION_DATA,
+  REGULARIZATION_REQUEST,
+  REQUEST_APPROVED,
   SESSION_DATA,
   SESSION_ENDED,
   SUCCESS_STATUS_CODE,
@@ -13,7 +15,7 @@ import type SocketIo from "../utilities/clientSocket";
 import type ServerSocket from "../utilities/djangoSocket";
 import type { IEventData, IEventMessage } from "../index.types";
 import ServerSocketService from "./djangoSocket.services";
-import type ClinetSocket from "../utilities/clientSocket";
+import type ClientSocket from "../utilities/clientSocket";
 import ClientSocketServices from "./clientSocket.services";
 
 class CommunicationService {
@@ -23,14 +25,14 @@ class CommunicationService {
 
   constructor(
     serverSocket: ServerSocket,
-    clientSocket: ClinetSocket,
+    clientSocket: ClientSocket,
     io: Server
   ) {
     //set the reference of the server socket class
     this.serverSocket = serverSocket;
-    //set the refrence of the the client socket clas
+    //set the reference of the the client socket class
     this.clientSocket = clientSocket;
-    //set the refrence of io server
+    //set the reference of io server
     this.io = io;
   }
 
@@ -40,10 +42,10 @@ class CommunicationService {
    * @returns clinet socket instance
    */
   getSocketClientInstance(session_id: string): Socket | null {
-    if (!this.clientSocket.sessionMpas[session_id]) {
+    if (!this.clientSocket.sessionMaps[session_id]) {
       return null;
     }
-    return this.clientSocket.sessionMpas[session_id];
+    return this.clientSocket.sessionMaps[session_id];
   }
 
   /**
@@ -51,8 +53,8 @@ class CommunicationService {
    * @description remove the session data from the sessionMap
    */
   removeClientSocketFromMap(session_id: string) {
-    if (this.clientSocket.sessionMpas[session_id]) {
-      delete this.clientSocket.sessionMpas[session_id];
+    if (this.clientSocket.sessionMaps[session_id]) {
+      delete this.clientSocket.sessionMaps[session_id];
     }
   }
 
@@ -98,7 +100,7 @@ class CommunicationService {
           this.clientSocket.clientNameSpace,
           401
         );
-        return ClientSocketServices.disconnectClinet(
+        return ClientSocketServices.disconnectClient(
           this.clientSocket.clientNameSpace,
           session_id
         );
@@ -120,7 +122,7 @@ class CommunicationService {
       );
     } catch (error: any) {
       console.log(
-        `Error at AuthenticationHandler(client -DJANGO) - ${error.messaege}`
+        `Error at AuthenticationHandler(client -DJANGO) - ${error.message}`
       );
     }
   }
@@ -128,7 +130,7 @@ class CommunicationService {
   /**
    * @event on_going_session_data
    * @param message
-   * @description get and send the data of onGoing session (in-case of the reload or reconnection of the socket coneectio)
+   * @description get and send the data of onGoing session (in-case of the reload or reconnection of the socket connectio)
    */
   onGoingSessionDataHandler(messageEvent: IEventMessage) {
     try {
@@ -144,7 +146,7 @@ class CommunicationService {
         );
       }
 
-      ClientSocketServices.sendaMessageToClient(
+      ClientSocketServices.sendMessageToClient(
         ONGOING_SESSION_DATA,
         SUCCESS_STATUS_CODE,
         data,
@@ -161,14 +163,14 @@ class CommunicationService {
   /**
    * @event mark_attendance
    * @param messageEvent
-   * @description get the details of the stundet  whose the attendace is marked
+   * @description get the details of the student  whose the attendance is marked
    */
   sessionDataHandler(messageEvent: IEventMessage) {
     try {
       const { data } = messageEvent;
       const { session_id, data: studentData } = data as IEventData;
       console.log(studentData);
-      ClientSocketServices.sendaMessageToClient(
+      ClientSocketServices.sendMessageToClient(
         SESSION_DATA,
         SUCCESS_STATUS_CODE,
         studentData,
@@ -207,7 +209,7 @@ class CommunicationService {
       );
     } catch (error: any) {
       console.log(
-        `Error At sessionEndedHandler(client = FE) - ${error.messaege}`
+        `Error At sessionEndedHandler(client = FE) - ${error.message}`
       );
     }
   }
@@ -231,8 +233,8 @@ class CommunicationService {
           500
         );
       }
-      //todo: call the clinet session_ended event to close the seesion and disconnect the connection
-      ClientSocketServices.sendaMessageToClient(
+      //todo: call the client session_ended event to close the session and disconnect the connection
+      ClientSocketServices.sendMessageToClient(
         SESSION_ENDED,
         SUCCESS_STATUS_CODE,
         data,
@@ -245,7 +247,7 @@ class CommunicationService {
       //   delete this.clientSocket.sessionMpas[session_id];
       // }
       // close the connection
-      return ClientSocketServices.disconnectClinet(
+      return ClientSocketServices.disconnectClient(
         this.clientSocket.clientNameSpace,
         session_id
       );
@@ -284,7 +286,7 @@ class CommunicationService {
     }
   }
 
-  handletSessionEndedEvent(message: IEventData) {
+  handleSessionEndedEvent(message: IEventData) {
     try {
       //todo: distrucutre the data from the event message
       const { session_id, status, data, auth_token } = message;
@@ -305,6 +307,153 @@ class CommunicationService {
     } catch (error: any) {
       console.log(
         `Error At handletSessionEndedEvent(clinet - FE) - ${error.message}`
+      );
+    }
+  }
+
+  regularizationEventHandler(
+    session_id: String,
+    auth_token: string,
+    data: any
+  ) {
+    try {
+      const payload = {
+        client: "DJANGo",
+        session_id,
+        auth_token,
+        data,
+      };
+      ServerSocketService.sendMessage(
+        REGULARIZATION_REQUEST,
+        DJANGOCLIENT,
+        SUCCESS_STATUS_CODE,
+        payload,
+        this.serverSocket.socketInstance,
+        "req"
+      );
+    } catch (error: any) {
+      `Error At regularizationEventHandler(client - FE) - ${error.message}`;
+    }
+  }
+
+  serverRegularizationEventHandler(messageEvent: IEventMessage) {
+    console.log(
+      "🚀 ~ CommunicationService ~ serverRegularizationEventHandler ~ messageEvent:",
+      messageEvent
+    );
+    try {
+      const { status_code, data } = messageEvent;
+      const { session_id, status, message } = data as IEventData;
+      // let socket: Socket | null = this.getSocketClientInstance(session_id);
+      if (status_code !== 200 && status === false) {
+        console.log("object");
+        ClientSocketServices.sendErrorMessageToRoom(
+          message as string,
+          session_id,
+          this.clientSocket.clientNameSpace,
+          500
+        );
+      }
+
+      ClientSocketServices.sendMessageToClient(
+        REGULARIZATION_REQUEST,
+        SUCCESS_STATUS_CODE,
+        data,
+        this.clientSocket.clientNameSpace,
+        session_id
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At serverRegularizationEventHandler(client = DJANGO) - ${error.message}`
+      );
+    }
+  }
+
+  serverRegularizationEventApprovedHandler(messageEvent: IEventMessage) {
+    console.log(
+      "🚀 ~ CommunicationService ~ serverRegularizationEventHandler ~ messageEvent:",
+      messageEvent
+    );
+    try {
+      const { status_code, data } = messageEvent;
+      const { session_id, status, message } = data as IEventData;
+      // let socket: Socket | null = this.getSocketClientInstance(session_id);
+      if (status_code !== 200 && status === false) {
+        console.log("object");
+        ClientSocketServices.sendErrorMessageToRoom(
+          message as string,
+          session_id,
+          this.clientSocket.clientNameSpace,
+          500
+        );
+      }
+
+      ClientSocketServices.sendMessageToClient(
+        REQUEST_APPROVED,
+        SUCCESS_STATUS_CODE,
+        data,
+        this.clientSocket.clientNameSpace,
+        session_id
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At serverRegularizationEventHandler(client = DJANGO) - ${error.message}`
+      );
+    }
+  }
+
+  clientSessionEndEvent(session_id: string, auth_token: string) {
+    try {
+      const payload = {
+        session_id,
+        auth_token,
+      };
+
+      ServerSocketService.sendMessage(
+        SESSION_ENDED,
+        DJANGOCLIENT,
+        SUCCESS_STATUS_CODE,
+        payload,
+        this.serverSocket.socketInstance,
+        "req"
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At clientSessionEndEvent(client = FE) - ${error.message}`
+      );
+    }
+  }
+
+  serverSessionEndEvent(messageEvent: IEventMessage) {
+    try {
+      const { status_code, data } = messageEvent;
+      const { session_id, status, message } = data as IEventData;
+      // let socket: Socket | null = this.getSocketClientInstance(session_id);
+      if (status_code !== 200 && status === false) {
+        console.log("object");
+        ClientSocketServices.sendErrorMessageToRoom(
+          message as string,
+          session_id,
+          this.clientSocket.clientNameSpace,
+          500
+        );
+      }
+
+      ClientSocketServices.sendMessageToClient(
+        SESSION_ENDED,
+        SUCCESS_STATUS_CODE,
+        data,
+        this.clientSocket.clientNameSpace,
+        session_id
+      );
+
+      ClientSocketServices.disconnectClient(
+        this.clientSocket.clientNameSpace,
+        session_id
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At serverSessionEndEvent(client = DJANGOO) - ${error.message}`
       );
     }
   }

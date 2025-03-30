@@ -2,7 +2,7 @@ import { Server } from "socket.io";
 import "dotenv/config";
 import CommunicationService from "./services/communication.services";
 import ServerSocket from "./utilities/djangoSocket";
-import ClinetSocket from "./utilities/clientSocket";
+import ClientSocket from "./utilities/clientSocket";
 
 import App from "./app";
 
@@ -11,7 +11,7 @@ const io = new Server(Number(PORT), {
   //   cors: { origin: "*" },
 });
 const serverSocket = new ServerSocket(io);
-const clientSocket = new ClinetSocket(io, serverSocket);
+const clientSocket = new ClientSocket(io, serverSocket);
 
 const communicationService = new CommunicationService(
   serverSocket,

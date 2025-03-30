@@ -1,15 +1,16 @@
 import type { Socket } from "socket.io";
+import ClientSocketServices from "../services/clientSocket.services";
 // import ClientSocketServices from "./clientSocket.services";
 
-class SocketIoServives {
-  sessionMpas!: Record<string, Socket>;
+class SocketIoServices {
+  sessionMaps!: Record<string, Socket>;
   socket!: Socket;
   sessionId!: string;
   authToken!: string;
 
-  constructor(socket: Socket, sessionMpas: Record<string, Socket>) {
+  constructor(socket: Socket, sessionMaps: Record<string, Socket>) {
     this.socket = socket;
-    this.sessionMpas = sessionMpas;
+    this.sessionMaps = sessionMaps;
     // this.onOpenEventHandler();
   }
 
@@ -58,9 +59,36 @@ class SocketIoServives {
     // }
     // console.log(Object.keys(this.sessionMpas).length);
     console.log(
-      `client disconnectd - sessionId - ${
+      `client disconnected - sessionId - ${
         this.sessionId
       } at ${Date.now().toString()}`
+    );
+  }
+
+  regularizationAttendanceHandler(message: any) {
+    console.log(
+      "🚀 ~ SocketIoServices ~ regularizationAttendanceHandler ~ message:",
+      message
+    );
+    const { session_id, auth_token, data } = message;
+    if (
+      !session_id ||
+      !auth_token ||
+      session_id.trim() === "" ||
+      auth_token.trim() === ""
+    ) {
+      ClientSocketServices.sendErrorMessageToClient(
+        "please provide the valid session id and auth token",
+        this.socket,
+        500
+      );
+      return this.socket.disconnect(true);
+    }
+
+    globalThis.bunSocket.regularizationEventHandler(
+      session_id,
+      auth_token,
+      data
     );
   }
 
@@ -71,6 +99,24 @@ class SocketIoServives {
     // const { auth_token, session_id } = data?.data as ISessionEnded;
     // globalThis.bunSocket.sessionEndedHandler(session_id, auth_token);
   }
+
+  handleClientSessionEnded(message: any) {
+    const { session_id, auth_token } = message;
+    if (
+      !session_id ||
+      !auth_token ||
+      session_id.trim() === "" ||
+      auth_token.trim() === ""
+    ) {
+      ClientSocketServices.sendErrorMessageToClient(
+        "please provide the valid session id and auth token",
+        this.socket,
+        500
+      );
+      return this.socket.disconnect(true);
+    }
+    globalThis.bunSocket.clientSessionEndEvent(session_id, auth_token);
+  }
 }
 
-export default SocketIoServives;
+export default SocketIoServices;

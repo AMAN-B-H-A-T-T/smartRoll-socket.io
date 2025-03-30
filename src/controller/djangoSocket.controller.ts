@@ -4,6 +4,8 @@ import {
   DJANGOCLIENT,
   HEALTHCHECK,
   ONGOING_SESSION_DATA,
+  REGULARIZATION_REQUEST,
+  REQUEST_APPROVED,
   SESSION_DATA,
   SESSION_ENDED,
   SOCKET_CONNECTION,
@@ -94,12 +96,17 @@ class ServerSocketController {
      * @event session_ended
      * @description perform action when the session gone ended
      */
-    this.socket.on(SESSION_ENDED, (message) => {});
+    this.socket.on(SESSION_ENDED, (message) => {
+      globalThis.bunSocket.serverSessionEndEvent(message);
+    });
 
-    /**
-     * @event error
-     * @default trigger when any error occure during the socket connection
-     */
+    this.socket.on(REGULARIZATION_REQUEST, (message) => {
+      globalThis.bunSocket.serverRegularizationEventHandler(message);
+    });
+
+    this.socket.on(REQUEST_APPROVED, (message: any) => {
+      globalThis.bunSocket.serverRegularizationEventApprovedHandler(message);
+    });
 
     /**
      * @event disconnect

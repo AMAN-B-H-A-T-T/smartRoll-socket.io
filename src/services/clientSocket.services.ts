@@ -2,7 +2,7 @@ import type { Namespace, Socket } from "socket.io";
 import { ERROR, FECLIENT } from "../index.constant";
 
 class ClientSocketServices {
-  static sendaMessageToClient(
+  static sendMessageToClient(
     event: string,
     status_code: number,
     data: any,
@@ -17,7 +17,7 @@ class ClientSocketServices {
         data,
       },
     };
-    console.log(responseObj);
+    console.dir(responseObj, { depth: null, colors: true });
     clientNameSpace.to(session_id).emit(event, responseObj);
   }
 
@@ -50,7 +50,7 @@ class ClientSocketServices {
     nameSpace.to(session_id).emit(ERROR, errorObject);
   }
 
-  static disconnectClinet(namespace: Namespace, session_id: string) {
+  static disconnectClient(namespace: Namespace, session_id: string) {
     namespace
       .in(session_id)
       .fetchSockets()

@@ -52,7 +52,7 @@ class ServerSocket {
     this.setConnectionStatus(false);
     const timeOut = setTimeout(() => {
       globalThis.bunSocket.handleServerSocketDisconnection();
-    }, 10000);
+    }, 600000);
     this.setServerReconnectionTimeLimit(timeOut);
   }
 }

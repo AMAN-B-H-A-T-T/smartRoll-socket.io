@@ -31,10 +31,6 @@ class SocketIoServices {
   }
 
   regularizationAttendanceHandler(message: any) {
-    console.log(
-      "🚀 ~ SocketIoServices ~ regularizationAttendanceHandler ~ message:",
-      message
-    );
     const { session_id, auth_token, data } = message;
     if (
       !session_id ||

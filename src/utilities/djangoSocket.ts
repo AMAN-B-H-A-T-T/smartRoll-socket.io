@@ -29,6 +29,9 @@ class ServerSocket {
     });
   }
 
+  /**
+   * @returns connection_status
+   */
   getConnectionStatus(): boolean {
     return this.connection_state;
   }

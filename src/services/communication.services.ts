@@ -309,6 +309,14 @@ class CommunicationService {
     }
   }
 
+  /**
+   *
+   * @param session_id
+   * @param auth_token
+   * @param data
+   * @event regulization_request
+   * @description handle the student mannual attendace event
+   */
   regularizationEventHandler(
     session_id: String,
     auth_token: string,
@@ -334,6 +342,10 @@ class CommunicationService {
     }
   }
 
+  /**
+   * @param messageEvent
+   * @event regulization_request
+   */
   serverRegularizationEventHandler(messageEvent: IEventMessage) {
     try {
       const { status_code, data } = messageEvent;
@@ -362,6 +374,10 @@ class CommunicationService {
     }
   }
 
+  /**
+   * @param messageEvent
+   * @event regulization_approved (client = DJANGO)
+   */
   serverRegularizationEventApprovedHandler(messageEvent: IEventMessage) {
     try {
       const { status_code, data } = messageEvent;
@@ -390,6 +406,11 @@ class CommunicationService {
     }
   }
 
+  /**
+   * @param session_id
+   * @param auth_token
+   * @event session_ended (client = FE)
+   */
   clientSessionEndEvent(session_id: string, auth_token: string) {
     try {
       const payload = {
@@ -412,6 +433,10 @@ class CommunicationService {
     }
   }
 
+  /**
+   * @param messageEvent
+   * @event session_ended (client = DJANGO)
+   */
   serverSessionEndEvent(messageEvent: IEventMessage) {
     try {
       const { status_code, data } = messageEvent;

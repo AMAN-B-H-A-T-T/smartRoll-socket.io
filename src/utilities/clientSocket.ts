@@ -1,5 +1,6 @@
 import type { Namespace, Server, Socket } from "socket.io";
 import {
+  AUDIO_PROCESSING,
   CONNECTION,
   ERROR,
   REGULARIZATION_REQUEST,
@@ -60,6 +61,11 @@ class ClientSocket {
           }
 
           socketService.onOpenEventHandler(session_id, auth_token);
+        });
+
+        socket.on(AUDIO_PROCESSING, (messageData) => {
+          //todo: call the controller for handle the audio message
+          socketService.handleAudioProcessingEvent(messageData);
         });
 
         socket.on(SESSION_ENDED, (message: string) => {

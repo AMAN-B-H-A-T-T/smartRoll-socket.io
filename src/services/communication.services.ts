@@ -1,5 +1,6 @@
 import { Socket, type Server } from "socket.io";
 import {
+  AUDIO_PROCESSING,
   AUTHENTICATION,
   DJANGOCLIENT,
   ERROR,
@@ -39,7 +40,7 @@ class CommunicationService {
   /**
    * @param session_id
    * @description get the client socket instance from sessionMaps
-   * @returns clinet socket instance
+   * @returns client socket instance
    */
   getSocketClientInstance(session_id: string): Socket | null {
     if (!this.clientSocket.sessionMaps[session_id]) {
@@ -61,7 +62,7 @@ class CommunicationService {
   /**
    * @param sessionId
    * @param authToken
-   * @description authenticate the teacher before joinning to session room
+   * @description authenticate the teacher before joining to session room
    */
   validateTeacher(sessionId: string, authToken: string) {
     try {
@@ -239,12 +240,6 @@ class CommunicationService {
         this.clientSocket.clientNameSpace,
         session_id
       );
-
-      // remove the socket object from map
-      // if (this.clientSocket.sessionMpas[session_id]) {
-      //   delete this.clientSocket.sessionMpas[session_id];
-      // }
-      // close the connection
       return ClientSocketServices.disconnectClient(
         this.clientSocket.clientNameSpace,
         session_id
@@ -264,8 +259,8 @@ class CommunicationService {
     try {
       //todo: false the connection_status
       this.serverSocket.setConnectionStatus(false);
-      //todo: iterate over all the availabe sockets map using the session_id
-      //todo: send the error message to client that server is disconneted
+      //todo: iterate over all the available sockets map using the session_id
+      //todo: send the error message to client that server is disconnected
       this.clientSocket.clientNameSpace.emit(ERROR, {
         event: ERROR,
         client: FECLIENT,
@@ -286,14 +281,11 @@ class CommunicationService {
 
   handleSessionEndedEvent(message: IEventData) {
     try {
-      //todo: distrucutre the data from the event message
       const { session_id, status, data, auth_token } = message;
-      //todo: validate the user session_id and auth_token
       const payload = {
         session_id: session_id,
         auth_token: auth_token,
       };
-      //todo: send the request to clinet = DJANGO to end the session
       ServerSocketService.sendMessage(
         SESSION_ENDED,
         DJANGOCLIENT,
@@ -304,7 +296,7 @@ class CommunicationService {
       );
     } catch (error: any) {
       console.log(
-        `Error At handletSessionEndedEvent(clinet - FE) - ${error.message}`
+        `Error At handleSessionEndedEvent(client - FE) - ${error.message}`
       );
     }
   }
@@ -315,7 +307,7 @@ class CommunicationService {
    * @param auth_token
    * @param data
    * @event regulization_request
-   * @description handle the student mannual attendace event
+   * @description handle the student manual attendance event
    */
   regularizationEventHandler(
     session_id: String,
@@ -466,6 +458,43 @@ class CommunicationService {
     } catch (error: any) {
       console.log(
         `Error At serverSessionEndEvent(client = DJANGOO) - ${error.message}`
+      );
+    }
+  }
+
+  clientAudioProcessingEventHandler(
+    session_id: string,
+    auth_token: string,
+    blob: any,
+    timestamp: string
+  ) {
+    try {
+      const payload = {
+        session_id: session_id,
+        auth_token: auth_token,
+        audio: blob,
+        start_time: timestamp,
+      };
+      ServerSocketService.sendMessage(
+        AUDIO_PROCESSING,
+        DJANGOCLIENT,
+        SUCCESS_STATUS_CODE,
+        payload,
+        this.serverSocket.socketInstance,
+        "req"
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At clinetAudioProcessingEventHandler(client = FE) - ${error.message}`
+      );
+    }
+  }
+
+  serverAudioProcessingEventHandler(message: any) {
+    try {
+    } catch (error: any) {
+      console.log(
+        `Error At serverAudioProcessingEventHandler(client = DJANGO) - ${error.message}`
       );
     }
   }

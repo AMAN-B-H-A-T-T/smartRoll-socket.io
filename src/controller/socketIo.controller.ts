@@ -1,5 +1,6 @@
 import type { Socket } from "socket.io";
 import ClientSocketServices from "../services/clientSocket.services";
+import type { IEventData, IEventMessage } from "../index.types";
 
 class SocketIoServices {
   sessionMaps!: Record<string, Socket>;
@@ -34,19 +35,8 @@ class SocketIoServices {
    */
   regularizationAttendanceHandler(message: any) {
     const { session_id, auth_token, data } = message;
-    if (
-      !session_id ||
-      !auth_token ||
-      session_id.trim() === "" ||
-      auth_token.trim() === ""
-    ) {
-      ClientSocketServices.sendErrorMessageToClient(
-        "please provide the valid session id and auth token",
-        this.socket,
-        500
-      );
-      return this.socket.disconnect(true);
-    }
+    const errorFlag = this._validateSessionAndAuthToken(session_id, auth_token);
+    if (errorFlag) return this.socket.disconnect(true);
 
     globalThis.bunSocket.regularizationEventHandler(
       session_id,
@@ -62,6 +52,27 @@ class SocketIoServices {
 
   handleClientSessionEnded(message: any) {
     const { session_id, auth_token } = message;
+    const errorFlag = this._validateSessionAndAuthToken(session_id, auth_token);
+    if (errorFlag) return this.socket.disconnect(true);
+    globalThis.bunSocket.clientSessionEndEvent(session_id, auth_token);
+  }
+
+  handleAudioProcessingEvent(message: any) {
+    const { blob, session_id, auth_token, timestamp } = message;
+    const errorFlag = this._validateSessionAndAuthToken(session_id, auth_token);
+    if (errorFlag) return this.socket.disconnect(true);
+    globalThis.bunSocket.clientAudioProcessingEventHandler(
+      session_id,
+      auth_token as string,
+      blob,
+      timestamp
+    );
+  }
+
+  private _validateSessionAndAuthToken(
+    session_id: string,
+    auth_token: string | null | undefined
+  ) {
     if (
       !session_id ||
       !auth_token ||
@@ -73,9 +84,9 @@ class SocketIoServices {
         this.socket,
         500
       );
-      return this.socket.disconnect(true);
+      return true;
     }
-    globalThis.bunSocket.clientSessionEndEvent(session_id, auth_token);
+    return false;
   }
 }
 

@@ -1,5 +1,6 @@
 import type { Socket } from "socket.io";
 import {
+  AUDIO_PROCESSING,
   AUTHENTICATION,
   DJANGOCLIENT,
   HEALTHCHECK,
@@ -31,12 +32,12 @@ class ServerSocketController {
      * @event socket_connection
      */
     this.socket.on(SOCKET_CONNECTION, (message: IEventMessage) => {
-      //set the connection_state to true after the successfull connection
+      //set the connection_state to true after the successful connection
       // this.socketInstance.connection_state = true;
 
       this.socketInstance.setConnectionStatus(true);
-    
-      // emit the evetn : socket_connection to sever
+
+      // emit the event : socket_connection to sever
       ServerSocketService.sendMessage(
         SOCKET_CONNECTION,
         DJANGOCLIENT,
@@ -49,7 +50,7 @@ class ServerSocketController {
 
     /**
      * @event health_check
-     * @description event for the health-check to enusur server connection is alive
+     * @description event for the health-check to ensure server connection is alive
      */
     this.socket.on(HEALTHCHECK, () => {
       const responseObj = {
@@ -84,12 +85,14 @@ class ServerSocketController {
 
     /**
      * @event session_data
-     * @description get the details of the students whose the attendace is marked
+     * @description get the details of the students whose the attendance is marked
      */
-    this.socket.on(SESSION_DATA, (messaege: IEventMessage) => {
-      //todo: create the handler in communication srvices
-      
-      globalThis.bunSocket.sessionDataHandler(messaege);
+    this.socket.on(SESSION_DATA, (message: IEventMessage) => {
+      globalThis.bunSocket.sessionDataHandler(message);
+    });
+
+    this.socket.on(AUDIO_PROCESSING, (message: IEventMessage) => {
+      globalThis.bunSocket.serverAudioProcessingEventHandler(message);
     });
 
     /**

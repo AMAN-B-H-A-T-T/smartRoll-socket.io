@@ -9,6 +9,7 @@ import {
   REQUEST_APPROVED,
   SESSION_DATA,
   SESSION_ENDED,
+  SESSION_TIMEOUT_EVENT,
   SOCKET_CONNECTION,
   SUCCESS_STATUS_CODE,
 } from "../index.constant";
@@ -56,7 +57,6 @@ class ServerSocketController {
       const responseObj = {
         data: "pong",
       };
-      console.log("health-check");
       ServerSocketService.sendMessage(
         HEALTHCHECK,
         DJANGOCLIENT,
@@ -91,10 +91,6 @@ class ServerSocketController {
       globalThis.bunSocket.sessionDataHandler(message);
     });
 
-    this.socket.on(AUDIO_PROCESSING, (message: IEventMessage) => {
-      globalThis.bunSocket.serverAudioProcessingEventHandler(message);
-    });
-
     /**
      * @event session_ended
      * @description perform action when the session gone ended
@@ -109,6 +105,10 @@ class ServerSocketController {
 
     this.socket.on(REQUEST_APPROVED, (message: any) => {
       globalThis.bunSocket.serverRegularizationEventApprovedHandler(message);
+    });
+
+    this.socket.on(SESSION_TIMEOUT_EVENT, (message: any) => {
+      globalThis.bunSocket.ServerSessionTimeOutEventHandler(message);
     });
 
     /**

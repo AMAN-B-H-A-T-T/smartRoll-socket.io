@@ -17,7 +17,6 @@ class ClientSocketServices {
         data,
       },
     };
-    console.dir(responseObj, { depth: null, colors: true });
     clientNameSpace.to(session_id).emit(event, responseObj);
   }
 
@@ -57,9 +56,6 @@ class ClientSocketServices {
       .then((sockets) =>
         Promise.all(sockets.map((socket) => socket.disconnect(true)))
       )
-      .then(() =>
-        console.log(`All clients in session ${session_id} disconnected.`)
-      )
       .catch((err) => console.error("Error disconnecting clients:", err));
   }
 
@@ -68,9 +64,6 @@ class ClientSocketServices {
       .fetchSockets()
       .then((sockets) => {
         return Promise.all(sockets.map((socket) => socket.disconnect(true)));
-      })
-      .then(() => {
-        console.log("All clients disconnected.");
       })
       .catch((error) =>
         console.log(`disconnectAllActiveClient - ${error.message}`)

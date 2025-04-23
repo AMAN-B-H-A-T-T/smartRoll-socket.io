@@ -10,6 +10,7 @@ import {
   REQUEST_APPROVED,
   SESSION_DATA,
   SESSION_ENDED,
+  SESSION_TIMEOUT_EVENT,
   SUCCESS_STATUS_CODE,
 } from "../index.constant";
 import type SocketIo from "../utilities/clientSocket";
@@ -490,11 +491,19 @@ class CommunicationService {
     }
   }
 
-  serverAudioProcessingEventHandler(message: any) {
+  ServerSessionTimeOutEventHandler(message: any) {
     try {
+      const { remaining_time, session_id } = message;
+      ClientSocketServices.sendMessageToClient(
+        SESSION_TIMEOUT_EVENT,
+        SUCCESS_STATUS_CODE,
+        remaining_time,
+        this.clientSocket.clientNameSpace,
+        session_id
+      );
     } catch (error: any) {
       console.log(
-        `Error At serverAudioProcessingEventHandler(client = DJANGO) - ${error.message}`
+        `Error At ServerSessionTimeOutEventHandler (client = DJANOG) - ${error.message}`
       );
     }
   }

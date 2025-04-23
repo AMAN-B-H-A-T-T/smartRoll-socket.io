@@ -5,6 +5,7 @@ import {
   ERROR,
   REGULARIZATION_REQUEST,
   SESSION_ENDED,
+  SESSION_TIMEOUT_EVENT,
   SOCKET_CONNECTION,
 } from "../index.constant";
 import type ServerSocket from "./djangoSocket";
@@ -42,10 +43,8 @@ class ClientSocket {
           this.sessionMaps
         );
 
-        socket.on(SOCKET_CONNECTION, (message) => {
+        socket.on(SOCKET_CONNECTION, async (message) => {
           const { session_id, auth_token } = message as IEventData;
-          // check for null , undefined and empty
-
           if (
             !session_id ||
             !auth_token ||
@@ -54,6 +53,18 @@ class ClientSocket {
           ) {
             ClientSocketServices.sendErrorMessageToClient(
               "Please provide the session id and auth_token",
+              socket,
+              500
+            );
+            return socket.disconnect(true);
+          }
+
+          const clientCount: number = (await this.getAllClientsConnectedCount(
+            session_id
+          )) as number;
+          if (clientCount >= 1) {
+            ClientSocketServices.sendErrorMessageToClient(
+              "Only one teacher can be connected to a lecture session at a time. Another teacher is already present.",
               socket,
               500
             );
@@ -94,6 +105,17 @@ class ClientSocket {
 
   cleanUpSessionMap() {
     this.sessionMaps = {};
+  }
+
+  async getAllClientsConnectedCount(session_id: string) {
+    try {
+      const clientCount = await this.clientNameSpace
+        .in(session_id)
+        .allSockets();
+      return clientCount.size;
+    } catch (error: any) {
+      console.log(`Error at getAllClientsConnectedCount: ${error.message}`);
+    }
   }
 }
 

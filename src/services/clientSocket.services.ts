@@ -13,6 +13,8 @@ class ClientSocketServices {
       event,
       client: FECLIENT,
       status_code,
+      message: data.message,
+      attendance_slug: data.attendance_slug,
       data: {
         data,
       },

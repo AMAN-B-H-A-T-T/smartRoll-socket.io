@@ -11,6 +11,7 @@ import {
   SESSION_TIMEOUT_EVENT,
   SOCKET_CONNECTION,
   SUCCESS_STATUS_CODE,
+  UPDATE_ATTENDACE,
 } from "../index.constant";
 import ServerSocketService from "../services/djangoSocket.services";
 import type { IEventMessage } from "../index.types";
@@ -104,6 +105,10 @@ class ServerSocketController {
 
     this.socket.on(REQUEST_APPROVED, (message: any) => {
       globalThis.bunSocket.serverRegularizationEventApprovedHandler(message);
+    });
+
+    this.socket.on(UPDATE_ATTENDACE, (message: any) => {
+      globalThis.bunSocket.serverStudentUpdateAttendanceMarkingApprove(message);
     });
 
     this.socket.on(SESSION_TIMEOUT_EVENT, (message: any) => {

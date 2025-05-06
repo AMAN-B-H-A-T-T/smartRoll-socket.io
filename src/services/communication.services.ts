@@ -12,6 +12,7 @@ import {
   SESSION_ENDED,
   SESSION_TIMEOUT_EVENT,
   SUCCESS_STATUS_CODE,
+  UPDATE_ATTENDACE,
 } from "../index.constant";
 import type SocketIo from "../utilities/clientSocket";
 import type ServerSocket from "../utilities/djangoSocket";
@@ -504,6 +505,41 @@ class CommunicationService {
     } catch (error: any) {
       console.log(
         `Error At ServerSessionTimeOutEventHandler (client = DJANOG) - ${error.message}`
+      );
+    }
+  }
+
+  studentUpadteAttendanceMarkingRequest(payload: any) {
+    try {
+      ServerSocketService.sendMessage(
+        UPDATE_ATTENDACE,
+        DJANGOCLIENT,
+        SUCCESS_STATUS_CODE,
+        payload,
+        this.serverSocket.socketInstance,
+        "req"
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At studentUpadteAttendanceMarkingRequest (client = FE) - ${error.message}`
+      );
+    }
+  }
+
+  serverStudentUpdateAttendanceMarkingApprove(message: any) {
+    try {
+      const { data, status_code } = message;
+      const { session_id } = data;
+      ClientSocketServices.sendMessageToClient(
+        UPDATE_ATTENDACE,
+        status_code,
+        data,
+        this.clientSocket.clientNameSpace,
+        session_id
+      );
+    } catch (error: any) {
+      console.log(
+        `Error At serverStudentUpdateAttendanceMarkingApprove (client = DJANGO) - ${error.message}`
       );
     }
   }

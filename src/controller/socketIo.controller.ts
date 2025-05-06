@@ -69,6 +69,19 @@ class SocketIoServices {
     );
   }
 
+  handelSuspeciousStudentAttendaceMarking(message: any) {
+    const { auth_token, session_id, attendance_slug, action } = message;
+    const errorFlag = this._validateSessionAndAuthToken(session_id, auth_token);
+    if (errorFlag) return this.socket.disconnect(true);
+    const payload = {
+      auth_token,
+      session_id,
+      attendance_slug,
+      action,
+    };
+    globalThis.bunSocket.studentUpadteAttendanceMarkingRequest(payload);
+  }
+
   private _validateSessionAndAuthToken(
     session_id: string,
     auth_token: string | null | undefined

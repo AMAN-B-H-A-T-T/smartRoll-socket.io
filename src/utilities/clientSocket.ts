@@ -7,6 +7,7 @@ import {
   SESSION_ENDED,
   SESSION_TIMEOUT_EVENT,
   SOCKET_CONNECTION,
+  UPDATE_ATTENDACE,
 } from "../index.constant";
 import type ServerSocket from "./djangoSocket";
 import ClientSocketServices from "../services/clientSocket.services";
@@ -81,6 +82,10 @@ class ClientSocket {
 
         socket.on(SESSION_ENDED, (message: string) => {
           socketService.handleClientSessionEnded(message);
+        });
+
+        socket.on(UPDATE_ATTENDACE, (message) => {
+          socketService.handelSuspeciousStudentAttendaceMarking(message);
         });
         socket.on("error", (error) => {
           console.log(error);

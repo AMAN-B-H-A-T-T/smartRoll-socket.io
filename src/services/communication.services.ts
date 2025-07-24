@@ -24,12 +24,14 @@ import ClientSocketServices from "./clientSocket.services";
 class CommunicationService {
   serverSocket!: ServerSocket;
   clientSocket!: SocketIo;
+  unixSocket!: any;
   io!: Server;
 
   constructor(
     serverSocket: ServerSocket,
     clientSocket: ClientSocket,
-    io: Server
+    io: Server,
+    unixSocket: any
   ) {
     //set the reference of the server socket class
     this.serverSocket = serverSocket;
@@ -37,8 +39,22 @@ class CommunicationService {
     this.clientSocket = clientSocket;
     //set the reference of io server
     this.io = io;
+    //set refrence of unixSocket
+    this.unixSocket = unixSocket;
   }
 
+  private _buildMessage({ type, data, messageHeader }: any) {
+    const headerBufLen = Buffer.alloc(4);
+    if (type === "audio") {
+      const headerBuffer = Buffer.from(JSON.stringify(messageHeader));
+      headerBufLen.writeUInt32BE(headerBuffer.length);
+      return Buffer.concat([headerBufLen, headerBuffer, data]);
+    } else {
+      const jsonBuf = Buffer.from(JSON.stringify(data));
+      headerBufLen.writeInt32BE(jsonBuf.length);
+      return Buffer.concat([headerBufLen, jsonBuf]);
+    }
+  }
   /**
    * @param session_id
    * @description get the client socket instance from sessionMaps
@@ -80,6 +96,13 @@ class CommunicationService {
         this.serverSocket.socketInstance,
         "req"
       );
+
+      const requestBuffer = this._buildMessage({
+        type: AUTHENTICATION,
+        data: payload,
+      });
+
+      this.unixSocket.sendEvent(AUTHENTICATION, requestBuffer);
     } catch (error: any) {
       console.log(`Error at : validateTeacher - ${error.message}`);
     }

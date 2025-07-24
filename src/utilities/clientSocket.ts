@@ -76,7 +76,6 @@ class ClientSocket {
         });
 
         socket.on(AUDIO_PROCESSING, (messageData) => {
-          //todo: call the controller for handle the audio message
           socketService.handleAudioProcessingEvent(messageData);
         });
 
@@ -87,9 +86,11 @@ class ClientSocket {
         socket.on(UPDATE_ATTENDACE, (message) => {
           socketService.handelSuspeciousStudentAttendaceMarking(message);
         });
+
         socket.on("error", (error) => {
           console.log(error);
         });
+
         socket.on("disconnecting", (reason) => {
           console.log("disconnection");
           console.log(reason);

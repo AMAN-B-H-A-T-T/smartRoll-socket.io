@@ -2,35 +2,32 @@ import type { Namespace, Server, Socket } from "socket.io";
 import {
   AUDIO_PROCESSING,
   CONNECTION,
-  ERROR,
   REGULARIZATION_REQUEST,
   SESSION_ENDED,
-  SESSION_TIMEOUT_EVENT,
   SOCKET_CONNECTION,
   UPDATE_ATTENDACE,
 } from "../index.constant";
-import type ServerSocket from "./djangoSocket";
 import ClientSocketServices from "../services/clientSocket.services";
 import type { IEventData } from "../index.types";
 import SocketIoServices from "../controller/socketIo.controller";
 
 class ClientSocket {
-  io!: Server;
-  sessionMaps: Record<string, Socket> = {};
-  serverSocket!: ServerSocket;
-  clientNameSpace!: Namespace;
+  public io!: Server;
+  public sessionMaps: Record<string, Socket> = {};
+  public unixSocket!: any;
+  public clientNameSpace!: Namespace;
 
-  constructor(io: Server, serverConnectionStatus: ServerSocket) {
+  constructor(io: Server, unixSocket: any) {
     this.io = io;
     this.clientNameSpace = this.io.of("/client");
-    this.serverSocket = serverConnectionStatus;
+    this.unixSocket = unixSocket;
     this.setUpSocket();
   }
 
   setUpSocket() {
     this.clientNameSpace.on(CONNECTION, (socket: Socket) => {
       try {
-        if (!this.serverSocket.getConnectionStatus()) {
+        if (!this.unixSocket.getConnectionState()) {
           ClientSocketServices.sendErrorMessageToClient(
             "something went wrong",
             socket,

@@ -15,26 +15,17 @@ import {
   UPDATE_ATTENDACE,
 } from "../index.constant";
 import type SocketIo from "../utilities/clientSocket";
-import type ServerSocket from "../utilities/djangoSocket";
 import type { IEventData, IEventMessage } from "../index.types";
-import ServerSocketService from "./djangoSocket.services";
 import type ClientSocket from "../utilities/clientSocket";
 import ClientSocketServices from "./clientSocket.services";
+import CommanUtilites from "../utilities/utilities";
 
 class CommunicationService {
-  serverSocket!: ServerSocket;
   clientSocket!: SocketIo;
   unixSocket!: any;
   io!: Server;
 
-  constructor(
-    serverSocket: ServerSocket,
-    clientSocket: ClientSocket,
-    io: Server,
-    unixSocket: any
-  ) {
-    //set the reference of the server socket class
-    this.serverSocket = serverSocket;
+  constructor(clientSocket: ClientSocket, unixSocket: any, io: Server) {
     //set the reference of the the client socket class
     this.clientSocket = clientSocket;
     //set the reference of io server
@@ -44,16 +35,27 @@ class CommunicationService {
   }
 
   private _buildMessage({ type, data, messageHeader }: any) {
-    const headerBufLen = Buffer.alloc(4);
-    if (type === "audio") {
-      const headerBuffer = Buffer.from(JSON.stringify(messageHeader));
-      headerBufLen.writeUInt32BE(headerBuffer.length);
-      return Buffer.concat([headerBufLen, headerBuffer, data]);
-    } else {
-      const jsonBuf = Buffer.from(JSON.stringify(data));
-      headerBufLen.writeInt32BE(jsonBuf.length);
-      return Buffer.concat([headerBufLen, jsonBuf]);
+    /*
+     * Build a message buffer compatible with the Python Unix-socket server.
+     * When `type === AUDIO_PROCESSING` we expect raw audio bytes (`data`) and
+     * a `messageHeader` object that already contains the required metadata
+     * (type, session_id, auth_token, start_time, audio_length).
+     * For all other cases `data` is assumed to be the JSON header itself.
+     */
+
+    const headerLenBuf = Buffer.alloc(4);
+
+    // Audio payload ➜ header + binary
+    if (type === AUDIO_PROCESSING && Buffer.isBuffer(data) && messageHeader) {
+      const headerBuf = Buffer.from(JSON.stringify(messageHeader));
+      headerLenBuf.writeUInt32BE(headerBuf.length);
+      return Buffer.concat([headerLenBuf, headerBuf, data]);
     }
+
+    // Default ➜ just JSON header
+    const headerBuf = Buffer.from(JSON.stringify(data));
+    headerLenBuf.writeUInt32BE(headerBuf.length);
+    return Buffer.concat([headerLenBuf, headerBuf]);
   }
   /**
    * @param session_id
@@ -85,19 +87,12 @@ class CommunicationService {
   validateTeacher(sessionId: string, authToken: string) {
     try {
       const payload = {
+        type: AUTHENTICATION,
         session_id: sessionId,
         auth_token: authToken,
       };
-      ServerSocketService.sendMessage(
-        AUTHENTICATION,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        payload,
-        this.serverSocket.socketInstance,
-        "req"
-      );
 
-      const requestBuffer = this._buildMessage({
+      const requestBuffer = CommanUtilites._prepareMessage({
         type: AUTHENTICATION,
         data: payload,
       });
@@ -132,19 +127,18 @@ class CommunicationService {
         // return socket?.disconnect(true);
       }
       // socket?.join(session_id);
-      const responseObj = {
+      const payload = {
+        type: ONGOING_SESSION_DATA,
         session_id: session_id,
         auth_token: auth_token,
       };
+      console.log(payload);
+      const requestBuffer = CommanUtilites._prepareMessage({
+        type: ONGOING_SESSION_DATA,
+        data: payload,
+      });
 
-      ServerSocketService.sendMessage(
-        ONGOING_SESSION_DATA,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        responseObj,
-        this.serverSocket.socketInstance,
-        "req"
-      );
+      this.unixSocket.sendEvent(ONGOING_SESSION_DATA, requestBuffer);
     } catch (error: any) {
       console.log(
         `Error at AuthenticationHandler(client -DJANGO) - ${error.message}`
@@ -223,14 +217,14 @@ class CommunicationService {
         },
       };
 
-      ServerSocketService.sendMessage(
-        SESSION_ENDED,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        payload,
-        this.serverSocket.socketInstance,
-        "req"
-      );
+      // ServerSocketService.sendMessage(
+      //   SESSION_ENDED,
+      //   DJANGOCLIENT,
+      //   SUCCESS_STATUS_CODE,
+      //   payload,
+      //   this.serverSocket.socketInstance,
+      //   "req"
+      // );
     } catch (error: any) {
       console.log(
         `Error At sessionEndedHandler(client = FE) - ${error.message}`
@@ -247,7 +241,6 @@ class CommunicationService {
     try {
       const { data, status_code } = JSON.parse(message) as IEventMessage;
       const { message: errorMessage, session_id } = data as IEventData;
-      //todo: remove the socket instance from the sessionMaps
       // const socket: Socket | null = this.getSocketClientInstance(session_id);
       if (status_code === 500) {
         return ClientSocketServices.sendErrorMessageToRoom(
@@ -257,7 +250,7 @@ class CommunicationService {
           500
         );
       }
-      //todo: call the client session_ended event to close the session and disconnect the connection
+
       ClientSocketServices.sendMessageToClient(
         SESSION_ENDED,
         SUCCESS_STATUS_CODE,
@@ -283,7 +276,7 @@ class CommunicationService {
   handleServerSocketDisconnection() {
     try {
       //todo: false the connection_status
-      this.serverSocket.setConnectionStatus(false);
+      this.unixSocket._setServerConnectionState(false);
       //todo: iterate over all the available sockets map using the session_id
       //todo: send the error message to client that server is disconnected
       this.clientSocket.clientNameSpace.emit(ERROR, {
@@ -308,17 +301,23 @@ class CommunicationService {
     try {
       const { session_id, status, data, auth_token } = message;
       const payload = {
+        type: SESSION_ENDED,
         session_id: session_id,
         auth_token: auth_token,
       };
-      ServerSocketService.sendMessage(
-        SESSION_ENDED,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        data,
-        this.serverSocket.socketInstance,
-        "req"
-      );
+
+      const payloadBuf = CommanUtilites._prepareMessage({
+        type: SESSION_ENDED,
+        data: payload,
+      });
+      // ServerSocketService.sendMessage(
+      //   SESSION_ENDED,
+      //   DJANGOCLIENT,
+      //   SUCCESS_STATUS_CODE,
+      //   data,
+      //   this.serverSocket.socketInstance,
+      //   "req"
+      // );
     } catch (error: any) {
       console.log(
         `Error At handleSessionEndedEvent(client - FE) - ${error.message}`
@@ -341,19 +340,16 @@ class CommunicationService {
   ) {
     try {
       const payload = {
-        client: "DJANGo",
+        type: REGULARIZATION_REQUEST,
         session_id,
         auth_token,
         data,
       };
-      ServerSocketService.sendMessage(
-        REGULARIZATION_REQUEST,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        payload,
-        this.serverSocket.socketInstance,
-        "req"
-      );
+      const messageBuf = CommanUtilites._prepareMessage({
+        type: REGULARIZATION_REQUEST,
+        data: payload,
+      });
+      return this.unixSocket.sendEvent(REGULARIZATION_REQUEST, messageBuf);
     } catch (error: any) {
       `Error At regularizationEventHandler(client - FE) - ${error.message}`;
     }
@@ -431,18 +427,16 @@ class CommunicationService {
   clientSessionEndEvent(session_id: string, auth_token: string) {
     try {
       const payload = {
+        type: SESSION_ENDED,
         session_id,
         auth_token,
       };
 
-      ServerSocketService.sendMessage(
-        SESSION_ENDED,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        payload,
-        this.serverSocket.socketInstance,
-        "req"
-      );
+      const messageBuf = CommanUtilites._prepareMessage({
+        type: SESSION_ENDED,
+        data: payload,
+      });
+      return this.unixSocket.sendEvent(SESSION_ENDED, messageBuf);
     } catch (error: any) {
       console.log(
         `Error At clientSessionEndEvent(client = FE) - ${error.message}`
@@ -487,27 +481,32 @@ class CommunicationService {
     }
   }
 
-  clientAudioProcessingEventHandler(
+  async clientAudioProcessingEventHandler(
     session_id: string,
     auth_token: string,
     blob: any,
     timestamp: string
   ) {
     try {
-      const payload = {
-        session_id: session_id,
-        auth_token: auth_token,
-        audio: blob,
+      // Convert the incoming Blob to raw PCM bytes
+      const audioBuf: Buffer = Buffer.from(await blob.arrayBuffer());
+
+      // Build header expected by Python server
+      const header = {
+        type: AUDIO_PROCESSING, // "incoming_audio_chunks"
+        session_id,
+        auth_token,
         start_time: timestamp,
+        audio_length: audioBuf.length,
       };
-      ServerSocketService.sendMessage(
-        AUDIO_PROCESSING,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        payload,
-        this.serverSocket.socketInstance,
-        "req"
-      );
+
+      const messageBuf = CommanUtilites._prepareMessage({
+        type: AUDIO_PROCESSING,
+        data: audioBuf,
+        header: header,
+      });
+
+      return this.unixSocket.sendEvent(AUDIO_PROCESSING, messageBuf);
     } catch (error: any) {
       console.log(
         `Error At clinetAudioProcessingEventHandler(client = FE) - ${error.message}`
@@ -534,14 +533,11 @@ class CommunicationService {
 
   studentUpadteAttendanceMarkingRequest(payload: any) {
     try {
-      ServerSocketService.sendMessage(
-        UPDATE_ATTENDACE,
-        DJANGOCLIENT,
-        SUCCESS_STATUS_CODE,
-        payload,
-        this.serverSocket.socketInstance,
-        "req"
-      );
+      const messageBuf = CommanUtilites._prepareMessage({
+        type: UPDATE_ATTENDACE,
+        data: { ...payload, type: UPDATE_ATTENDACE },
+      });
+      return this.unixSocket.sendEvent(UPDATE_ATTENDACE, messageBuf);
     } catch (error: any) {
       console.log(
         `Error At studentUpadteAttendanceMarkingRequest (client = FE) - ${error.message}`

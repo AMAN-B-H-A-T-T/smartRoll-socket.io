@@ -17,7 +17,6 @@ class SocketIoServices {
     this.sessionId = session_id;
     this.authToken = auth_token;
     this.socket.join(session_id);
-
     globalThis.bunSocket.validateTeacher(session_id, auth_token);
   }
 

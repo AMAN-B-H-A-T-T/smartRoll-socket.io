@@ -1,6 +1,7 @@
 import type { Namespace, Server, Socket } from "socket.io";
 import { CONNECTION } from "../index.constant";
 import ServerSocketController from "../controller/djangoSocket.controller";
+import { RECONNECTION_TIMEOUT } from "../configuration/env.config";
 
 class ServerSocket {
   connection_state: boolean = false;
@@ -55,7 +56,7 @@ class ServerSocket {
     this.setConnectionStatus(false);
     const timeOut = setTimeout(() => {
       globalThis.bunSocket.handleServerSocketDisconnection();
-    }, 600000);
+    }, RECONNECTION_TIMEOUT);
     this.setServerReconnectionTimeLimit(timeOut);
   }
 }

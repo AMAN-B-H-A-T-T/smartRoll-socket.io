@@ -124,15 +124,13 @@ class CommunicationService {
           this.clientSocket.clientNameSpace,
           session_id
         );
-        // return socket?.disconnect(true);
       }
-      // socket?.join(session_id);
+
       const payload = {
         type: ONGOING_SESSION_DATA,
         session_id: session_id,
         auth_token: auth_token,
       };
-      console.log(payload);
       const requestBuffer = CommanUtilites._prepareMessage({
         type: ONGOING_SESSION_DATA,
         data: payload,
@@ -155,6 +153,7 @@ class CommunicationService {
     try {
       const { status_code, data } = messageEvent;
       const { session_id, status, message } = data as IEventData;
+      console.log(session_id);
       // let socket: Socket | null = this.getSocketClientInstance(session_id);
       if (status_code !== 200 && status === false) {
         ClientSocketServices.sendErrorMessageToRoom(
@@ -172,6 +171,7 @@ class CommunicationService {
         this.clientSocket.clientNameSpace,
         session_id
       );
+      console.log(`sendt ${ONGOING_SESSION_DATA} event to client`);
     } catch (error: any) {
       console.log(
         `Error At onGoingSessionDataHandler(client = DJANGO) - ${error.message}`
@@ -489,7 +489,7 @@ class CommunicationService {
   ) {
     try {
       // Convert the incoming Blob to raw PCM bytes
-      const audioBuf: Buffer = Buffer.from(await blob.arrayBuffer());
+      console.log(blob);
 
       // Build header expected by Python server
       const header = {
@@ -497,12 +497,12 @@ class CommunicationService {
         session_id,
         auth_token,
         start_time: timestamp,
-        audio_length: audioBuf.length,
+        audio_length: blob.length,
       };
 
       const messageBuf = CommanUtilites._prepareMessage({
-        type: AUDIO_PROCESSING,
-        data: audioBuf,
+        type: "audio",
+        data: blob,
         header: header,
       });
 

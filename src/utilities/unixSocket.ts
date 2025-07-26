@@ -1,4 +1,7 @@
-import { RECONNECTION_TIMEOUT } from "../configuration/env.config";
+import {
+  HEALTHCHECK_INTERVAL,
+  RECONNECTION_TIMEOUT,
+} from "../configuration/env.config";
 import * as consts from "../index.constant";
 import CommanUtilites from "./utilities";
 
@@ -10,23 +13,16 @@ class UnixSocketClient {
   public dataBuffer: any;
   public connectionState: boolean = false;
   public serverReconnectionTimeLimit: any = null;
+  public healthCheckIntervalRef: any = null;
 
   constructor(path: string) {
     //initilize
     this.path = path;
     this.dataBuffer = Buffer.alloc(0);
     //connect
-    this.client = net.createConnection({ path }, () =>
-      this._clientConnectionCallback()
-    );
+    this._createUnixSocketConnection(path);
 
     //method to process data
-    this.client.on("data", (data: any) => this._readServerMessage(data));
-    //method to handle disconnect timeout logic
-    this.client.on("end", () => {
-      console.warn("Server gets disconnect...");
-      this._handleServerDisconnectionTimeOut();
-    });
   }
 
   private _clientConnectionCallback() {
@@ -35,6 +31,7 @@ class UnixSocketClient {
     // Python server can acknowledge us with a `socket_connection` response.
     this._setServerConnectionState(true);
     this._sendConnectionACK();
+    this._sendhealthCheck();
   }
 
   private _readServerMessage(data: any) {
@@ -50,12 +47,12 @@ class UnixSocketClient {
   }
 
   private _processEvent(data: any) {
-    console.log(data);
     const { type } = data;
     try {
       switch (type) {
         case consts.HEALTHCHECK:
-          return this._sendHealthCheckMessage();
+          console.info(`Event : ${consts.HEALTHCHECK} received from server`);
+          return;
         case consts.ONGOING:
           break;
         case consts.CONNECTION:
@@ -151,15 +148,90 @@ class UnixSocketClient {
     this.setServerReconnectionTimeLimit(timeOut);
   }
 
+  private _sendhealthCheck() {
+    const ref = setInterval(() => {
+      this._sendHealthCheckMessage();
+    }, HEALTHCHECK_INTERVAL);
+    this._setHealthCheckInterval(ref);
+  }
+
+  private _createUnixSocketConnection(path: string) {
+    try {
+      const client = net.createConnection({ path }, () =>
+        this._clientConnectionCallback()
+      );
+
+      this.client = client;
+      client.on("data", (data: any) => {
+        this.setUnixClient(client);
+        this._readServerMessage(data);
+      });
+      //method to handle disconnect timeout logic
+      client.on("end", () => {
+        console.warn("Server gets disconnect...");
+        this._handleServerDisconnectionTimeOut();
+        clearInterval(this.getHealthCheckInterval());
+        this.cleanupClient();
+        setTimeout(
+          () => this._createUnixSocketConnection(path),
+          RECONNECTION_TIMEOUT
+        );
+      });
+
+      client.on("error", (err: any) => {
+        if (err.code === "ENOENT") {
+          console.error(`❌ Socket file not found at ${this.path}`);
+          this.cleanupClient();
+          setTimeout(
+            () => this._createUnixSocketConnection(path),
+            RECONNECTION_TIMEOUT
+          );
+          // Optionally retry connection later, or exit
+        } else {
+          console.error("Unexpected socket error:", err);
+        }
+      });
+    } catch (error: any) {
+      console.log(error.message);
+    }
+  }
+  private _setHealthCheckInterval(ref: any) {
+    this.healthCheckIntervalRef = ref;
+  }
+
   private setServerReconnectionTimeLimit(timeOut: any) {
     this.serverReconnectionTimeLimit = timeOut;
+  }
+
+  private setUnixClient(client: any) {
+    this.client = client;
+  }
+
+  private cleanupClient() {
+    if (this.client) {
+      this.client.removeAllListeners();
+      this.client.destroy();
+      this.client = null;
+    }
   }
 
   public getServerReconnectionTimeLimit() {
     return this.serverReconnectionTimeLimit;
   }
 
+  public getHealthCheckInterval() {
+    return this.healthCheckIntervalRef;
+  }
+
+  public geetUnixClient() {
+    return this.client;
+  }
+
   public sendEvent(event: any, data: any) {
+    if (!this.client && this.client.destroyed) {
+      console.error("clinet is not available");
+      return;
+    }
     this.client.write(data);
     console.info(`Data sent for event : ${event}`);
   }

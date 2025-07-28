@@ -21,14 +21,10 @@ class UnixSocketClient {
     this.dataBuffer = Buffer.alloc(0);
     //connect
     this._createUnixSocketConnection(path);
-
-    //method to process data
   }
 
   private _clientConnectionCallback() {
     console.info(`Connected to server ...! ; path : ${this.path}`);
-    // Connection established on the transport level – send handshake so the
-    // Python server can acknowledge us with a `socket_connection` response.
     this._setServerConnectionState(true);
     this._sendConnectionACK();
     this._sendhealthCheck();
@@ -48,24 +44,20 @@ class UnixSocketClient {
 
   private _processEvent(data: any) {
     const { type } = data;
+    console.info(`Event: ${type} received from server`);
     try {
       switch (type) {
         case consts.HEALTHCHECK:
-          console.info(`Event : ${consts.HEALTHCHECK} received from server`);
           return;
         case consts.ONGOING:
           break;
         case consts.CONNECTION:
           return this._sendConnectionACK();
         case consts.SOCKET_CONNECTION:
-          console.log(`event : socket_connection : ${data}`);
           return this._setServerConnectionState(true);
         case consts.AUTHENTICATION:
           return globalThis.bunSocket.authenticationHandler(data);
         case consts.ONGOING_SESSION_DATA:
-          console.log(
-            `data received from event : ${consts.ONGOING_SESSION_DATA}`
-          );
           return globalThis.bunSocket.onGoingSessionDataHandler(data);
         case consts.SESSION_DATA:
           return globalThis.bunSocket.sessionDataHandler(data);
@@ -88,7 +80,6 @@ class UnixSocketClient {
           if (bunSock && bunSock.serverAudioProcessingAck) {
             return bunSock.serverAudioProcessingAck(data);
           }
-          console.info("Audio processing ack received", data);
           return;
 
         // Heart-beat ACK from the server
@@ -195,6 +186,7 @@ class UnixSocketClient {
       console.log(error.message);
     }
   }
+
   private _setHealthCheckInterval(ref: any) {
     this.healthCheckIntervalRef = ref;
   }

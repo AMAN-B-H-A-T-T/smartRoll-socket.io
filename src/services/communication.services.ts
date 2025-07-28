@@ -488,12 +488,8 @@ class CommunicationService {
     timestamp: string
   ) {
     try {
-      // Convert the incoming Blob to raw PCM bytes
-      console.log(blob);
-
-      // Build header expected by Python server
       const header = {
-        type: AUDIO_PROCESSING, // "incoming_audio_chunks"
+        type: AUDIO_PROCESSING,
         session_id,
         auth_token,
         start_time: timestamp,

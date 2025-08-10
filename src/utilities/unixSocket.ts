@@ -38,7 +38,7 @@ class UnixSocketClient {
       const msgBuf = this.dataBuffer.slice(4, 4 + msgLen);
       const msg = JSON.parse(msgBuf.toString());
       this.dataBuffer = this.dataBuffer.slice(4 + msgLen);
-      +this._processEvent(msg);
+      this._processEvent(msg);
     }
   }
 

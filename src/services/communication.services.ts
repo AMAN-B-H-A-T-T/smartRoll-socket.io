@@ -22,41 +22,18 @@ import CommanUtilites from "../utilities/utilities";
 
 class CommunicationService {
   clientSocket!: SocketIo;
-  unixSocket!: any;
+  worker!: any;
   io!: Server;
 
-  constructor(clientSocket: ClientSocket, unixSocket: any, io: Server) {
+  constructor(clientSocket: ClientSocket, worker: any, io: Server) {
     //set the reference of the the client socket class
     this.clientSocket = clientSocket;
     //set the reference of io server
     this.io = io;
-    //set refrence of unixSocket
-    this.unixSocket = unixSocket;
+    //set refrence of worker
+    this.worker = worker;
   }
 
-  private _buildMessage({ type, data, messageHeader }: any) {
-    /*
-     * Build a message buffer compatible with the Python Unix-socket server.
-     * When `type === AUDIO_PROCESSING` we expect raw audio bytes (`data`) and
-     * a `messageHeader` object that already contains the required metadata
-     * (type, session_id, auth_token, start_time, audio_length).
-     * For all other cases `data` is assumed to be the JSON header itself.
-     */
-
-    const headerLenBuf = Buffer.alloc(4);
-
-    // Audio payload ➜ header + binary
-    if (type === AUDIO_PROCESSING && Buffer.isBuffer(data) && messageHeader) {
-      const headerBuf = Buffer.from(JSON.stringify(messageHeader));
-      headerLenBuf.writeUInt32BE(headerBuf.length);
-      return Buffer.concat([headerLenBuf, headerBuf, data]);
-    }
-
-    // Default ➜ just JSON header
-    const headerBuf = Buffer.from(JSON.stringify(data));
-    headerLenBuf.writeUInt32BE(headerBuf.length);
-    return Buffer.concat([headerLenBuf, headerBuf]);
-  }
   /**
    * @param session_id
    * @description get the client socket instance from sessionMaps
@@ -92,12 +69,12 @@ class CommunicationService {
         auth_token: authToken,
       };
 
-      const requestBuffer = CommanUtilites._prepareMessage({
+      const request = {
         type: AUTHENTICATION,
         data: payload,
-      });
+      };
 
-      this.unixSocket.sendEvent(AUTHENTICATION, requestBuffer);
+      this.worker.postMessage(request);
     } catch (error: any) {
       console.log(`Error at : validateTeacher - ${error.message}`);
     }
@@ -131,12 +108,12 @@ class CommunicationService {
         session_id: session_id,
         auth_token: auth_token,
       };
-      const requestBuffer = CommanUtilites._prepareMessage({
+      const request = {
         type: ONGOING_SESSION_DATA,
         data: payload,
-      });
+      };
 
-      this.unixSocket.sendEvent(ONGOING_SESSION_DATA, requestBuffer);
+      this.worker.postMessage(request);
     } catch (error: any) {
       console.log(
         `Error at AuthenticationHandler(client -DJANGO) - ${error.message}`
@@ -275,10 +252,7 @@ class CommunicationService {
    */
   handleServerSocketDisconnection() {
     try {
-      //todo: false the connection_status
-      this.unixSocket._setServerConnectionState(false);
-      //todo: iterate over all the available sockets map using the session_id
-      //todo: send the error message to client that server is disconnected
+      // this.worker._setServerConnectionState(false);
       this.clientSocket.clientNameSpace.emit(ERROR, {
         event: ERROR,
         client: FECLIENT,
@@ -345,11 +319,11 @@ class CommunicationService {
         auth_token,
         data,
       };
-      const messageBuf = CommanUtilites._prepareMessage({
+      const message = {
         type: REGULARIZATION_REQUEST,
         data: payload,
-      });
-      return this.unixSocket.sendEvent(REGULARIZATION_REQUEST, messageBuf);
+      };
+      return this.worker.postMessage(message);
     } catch (error: any) {
       `Error At regularizationEventHandler(client - FE) - ${error.message}`;
     }
@@ -432,11 +406,11 @@ class CommunicationService {
         auth_token,
       };
 
-      const messageBuf = CommanUtilites._prepareMessage({
+      const message = {
         type: SESSION_ENDED,
         data: payload,
-      });
-      return this.unixSocket.sendEvent(SESSION_ENDED, messageBuf);
+      };
+      return this.worker.postMessage(message);
     } catch (error: any) {
       console.log(
         `Error At clientSessionEndEvent(client = FE) - ${error.message}`
@@ -484,25 +458,29 @@ class CommunicationService {
   async clientAudioProcessingEventHandler(
     session_id: string,
     auth_token: string,
-    blob: any,
+    audioBuffer: any,
     timestamp: string
   ) {
+    const arrayBuffer = audioBuffer.buffer.slice(
+      audioBuffer.byteOffset,
+      audioBuffer.byteOffset + audioBuffer.byteLength
+    );
     try {
       const header = {
         type: AUDIO_PROCESSING,
         session_id,
         auth_token,
         start_time: timestamp,
-        audio_length: blob.length,
+        audio_length: audioBuffer.length,
       };
 
-      const messageBuf = CommanUtilites._prepareMessage({
+      const message = {
         type: "audio",
-        data: blob,
+        data: audioBuffer,
         header: header,
-      });
+      };
 
-      return this.unixSocket.sendEvent(AUDIO_PROCESSING, messageBuf);
+      return this.worker.postMessage(message, [arrayBuffer]);
     } catch (error: any) {
       console.log(
         `Error At clinetAudioProcessingEventHandler(client = FE) - ${error.message}`
@@ -529,11 +507,11 @@ class CommunicationService {
 
   studentUpadteAttendanceMarkingRequest(payload: any) {
     try {
-      const messageBuf = CommanUtilites._prepareMessage({
+      const message = {
         type: UPDATE_ATTENDACE,
         data: { ...payload, type: UPDATE_ATTENDACE },
-      });
-      return this.unixSocket.sendEvent(UPDATE_ATTENDACE, messageBuf);
+      };
+      return this.worker.postMessage(message);
     } catch (error: any) {
       console.log(
         `Error At studentUpadteAttendanceMarkingRequest (client = FE) - ${error.message}`

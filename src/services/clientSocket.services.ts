@@ -27,13 +27,18 @@ class ClientSocketServices {
     socket: Socket | null,
     status_code: number
   ) {
-    const responseObj = {
-      event: ERROR,
-      client: FECLIENT,
-      status_code: status_code,
-      data: message,
-    };
-    socket?.emit(ERROR, responseObj);
+    try {
+      const responseObj = {
+        event: ERROR,
+        client: FECLIENT,
+        status_code: status_code,
+        data: message,
+      };
+      socket?.emit(ERROR, JSON.stringify(responseObj));
+      console.log(`Error message send : ${JSON.stringify(responseObj)}`);
+    } catch (error: any) {
+      console.log(error.message);
+    }
   }
 
   static sendErrorMessageToRoom(
@@ -48,6 +53,7 @@ class ClientSocketServices {
       status_code: status_code,
       data: message,
     };
+
     nameSpace.to(session_id).emit(ERROR, errorObject);
   }
 

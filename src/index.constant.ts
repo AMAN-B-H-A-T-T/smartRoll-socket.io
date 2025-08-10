@@ -15,3 +15,5 @@ export const REQUEST_APPROVED = "regulization_approved";
 export const AUDIO_PROCESSING = "incoming_audio_chunks";
 export const SESSION_TIMEOUT_EVENT = "session_timeout";
 export const UPDATE_ATTENDACE = "update_attendance";
+export const SERVER_CONNECTED = "connected";
+export const SERVER_DISCONNECTED = "disconnected";

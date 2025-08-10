@@ -35,6 +35,7 @@ class SocketIoServices {
   regularizationAttendanceHandler(message: any) {
     const { session_id, auth_token, data } = message;
     const errorFlag = this._validateSessionAndAuthToken(session_id, auth_token);
+
     if (errorFlag) return this.socket.disconnect(true);
 
     globalThis.bunSocket.regularizationEventHandler(

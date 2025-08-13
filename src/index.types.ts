@@ -15,6 +15,7 @@ type IEventDataTyepe =
 export interface IEventData {
   session_id: string;
   auth_token?: string | null;
+  isReConnect?: boolean;
   data?: IEventDataTyepe;
   status: boolean;
   message?: string;

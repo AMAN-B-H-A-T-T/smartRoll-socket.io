@@ -19,7 +19,7 @@ let dataBuffer = Buffer.alloc(0);
 let healthCheckInterval: any = null;
 
 self.onmessage = (event: MessageEvent) => {
-  const { type, data } = event.data;
+  const { type, data, header } = event.data;
   let msgBuffer = null;
   console.log(`message received from main thread : ${type}`);
   switch (type) {
@@ -39,8 +39,8 @@ self.onmessage = (event: MessageEvent) => {
     case consts.AUDIO_PROCESSING:
       msgBuffer = _prepareMessage({
         type,
-        data: data.data,
-        header: data.header,
+        data,
+        header,
       });
       sendEvent(type, msgBuffer);
       break;
@@ -74,7 +74,6 @@ function _clientConnectionCallback() {
 
 function _createUnixSocketConnection(path: string) {
   try {
-    console.log(path);
     client = net.createConnection({ path }, () => _clientConnectionCallback());
 
     client.on("data", (data: any) => {
@@ -143,15 +142,19 @@ function _processEvent(data: any) {
 }
 
 function _prepareMessage({ type, data, header }: IPrepareMessage) {
-  const headerBufLen = Buffer.alloc(4);
-  if (type === "audio") {
-    const headerBuffer = Buffer.from(JSON.stringify(header));
-    headerBufLen.writeUInt32BE(headerBuffer.length);
-    return Buffer.concat([headerBufLen, headerBuffer, data]);
-  } else {
-    const jsonBuf = Buffer.from(JSON.stringify(data));
-    headerBufLen.writeInt32BE(jsonBuf.length);
-    return Buffer.concat([headerBufLen, jsonBuf]);
+  try {
+    const headerBufLen = Buffer.alloc(4);
+    if (type === "incoming_audio_chunks") {
+      const headerBuffer = Buffer.from(JSON.stringify(header));
+      headerBufLen.writeUInt32BE(headerBuffer.length);
+      return Buffer.concat([headerBufLen, headerBuffer, data]);
+    } else {
+      const jsonBuf = Buffer.from(JSON.stringify(data));
+      headerBufLen.writeInt32BE(jsonBuf.length);
+      return Buffer.concat([headerBufLen, jsonBuf]);
+    }
+  } catch (error: any) {
+    console.log(`Error at _preapareMessage : ${error.message}`);
   }
 }
 

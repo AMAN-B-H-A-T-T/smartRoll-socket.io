@@ -67,6 +67,21 @@ class ClientSocketServices {
       .catch((err) => console.error("Error disconnecting clients:", err));
   }
 
+  static async removeClientsFromRoom(namespace: Namespace, roomName: string) {
+    try {
+      const sockets = await namespace.in(roomName).fetchSockets();
+      console.log(`Found ${sockets.length} clients in ${roomName}`);
+
+      await Promise.all(sockets.map((socket) => socket.leave(roomName)));
+
+      // ✅ Check how many are left
+      const remaining = await namespace.in(roomName).fetchSockets();
+      console.log(`Remaining clients in ${roomName}: ${remaining.length}`);
+    } catch (err) {
+      console.error("Error removing clients from room:", err);
+    }
+  }
+
   static disconnectAllActiveClient(nameSpace: Namespace) {
     nameSpace
       .fetchSockets()

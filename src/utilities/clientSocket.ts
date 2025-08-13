@@ -37,7 +37,7 @@ class ClientSocket {
         );
 
         socket.on(consts.SOCKET_CONNECTION, async (message) => {
-          const { session_id, auth_token } = message as IEventData;
+          const { session_id, auth_token, isReConnect } = message as IEventData;
           if (
             !session_id ||
             !auth_token ||
@@ -52,10 +52,19 @@ class ClientSocket {
             return socket.disconnect(true);
           }
 
+          if (isReConnect) {
+            console.log(`reconnect: ${isReConnect} ; session: ${session_id}`);
+            await ClientSocketServices.removeClientsFromRoom(
+              this.clientNameSpace,
+              session_id
+            );
+          }
+
           const clientCount: number = (await this.getAllClientsConnectedCount(
             session_id
           )) as number;
           console.log("clinetCount:", clientCount);
+
           if (clientCount >= 1) {
             ClientSocketServices.sendErrorMessageToClient(
               "Only one teacher can be connected to a lecture session at a time. Another teacher is already present.",

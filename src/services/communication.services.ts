@@ -475,11 +475,11 @@ class CommunicationService {
       };
 
       const message = {
-        type: "audio",
+        type: AUDIO_PROCESSING,
         data: audioBuffer,
         header: header,
       };
-
+      
       return this.worker.postMessage(message, [arrayBuffer]);
     } catch (error: any) {
       console.log(

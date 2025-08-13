@@ -5,6 +5,7 @@ import {
   DJANGOCLIENT,
   ERROR,
   FECLIENT,
+  NETWORK_EVENT,
   ONGOING_SESSION_DATA,
   REGULARIZATION_REQUEST,
   REQUEST_APPROVED,
@@ -479,7 +480,7 @@ class CommunicationService {
         data: audioBuffer,
         header: header,
       };
-      
+
       return this.worker.postMessage(message, [arrayBuffer]);
     } catch (error: any) {
       console.log(
@@ -533,6 +534,19 @@ class CommunicationService {
     } catch (error: any) {
       console.log(
         `Error At serverStudentUpdateAttendanceMarkingApprove (client = DJANGO) - ${error.message}`
+      );
+    }
+  }
+  networkEventProcess(payload: any) {
+    try {
+      const message = {
+        type: NETWORK_EVENT,
+        data: payload,
+      };
+      return this.worker.postMessage(message);
+    } catch (error: any) {
+      console.log(
+        `Error At clientSessionEndEvent(client = FE) - ${error.message}`
       );
     }
   }

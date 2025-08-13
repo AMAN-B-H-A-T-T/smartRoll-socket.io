@@ -105,6 +105,10 @@ class ClientSocket {
         socket.on(consts.REGULARIZATION_REQUEST, (message: any) => {
           socketService.regularizationAttendanceHandler(message);
         });
+
+        socket.on(consts.NETWORK_EVENT, (message: any) => {
+          socketService.handleNetworkEvent(message);
+        });
       } catch (error) {
         socket.disconnect(true);
       }

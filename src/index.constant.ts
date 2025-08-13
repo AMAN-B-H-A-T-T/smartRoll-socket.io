@@ -17,3 +17,4 @@ export const SESSION_TIMEOUT_EVENT = "session_timeout";
 export const UPDATE_ATTENDACE = "update_attendance";
 export const SERVER_CONNECTED = "connected";
 export const SERVER_DISCONNECTED = "disconnected";
+export const NETWORK_EVENT = "network_too_slow";

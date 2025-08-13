@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io";
 import ClientSocketServices from "../services/clientSocket.services";
-import type { IEventData, IEventMessage } from "../index.types";
+import { NETWORK_EVENT } from "../index.constant";
 
 class SocketIoServices {
   sessionMaps!: Record<string, Socket>;
@@ -45,6 +45,19 @@ class SocketIoServices {
     );
   }
 
+  handleNetworkEvent(message: any) {
+    const { session_id, auth_token, is_network_too_slow } = message;
+    const errorFlag = this._validateSessionAndAuthToken(session_id, auth_token);
+
+    if (errorFlag) return this.socket.disconnect(true);
+    const payload = {
+      type: NETWORK_EVENT,
+      session_id,
+      auth_token,
+      is_network_too_slow,
+    };
+    globalThis.bunSocket.networkEventProcess(payload);
+  }
   /**
    * @param message
    * @event session_ended

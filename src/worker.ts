@@ -33,6 +33,7 @@ self.onmessage = (event: MessageEvent) => {
     case consts.REGULARIZATION_REQUEST:
     case consts.ONGOING_SESSION_DATA:
     case consts.UPDATE_ATTENDACE:
+    case consts.NETWORK_EVENT:
       msgBuffer = _prepareMessage({ type, data });
       sendEvent(type, msgBuffer);
       break;

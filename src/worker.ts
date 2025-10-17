@@ -13,6 +13,8 @@ interface IPrepareMessage {
   data: any;
 }
 
+console.log("Worker thread PID:", process.pid);
+
 let client: net.Socket | any = null;
 let path: string | null = null;
 let dataBuffer = Buffer.alloc(0);

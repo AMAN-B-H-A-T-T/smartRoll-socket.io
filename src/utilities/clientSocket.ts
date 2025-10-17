@@ -36,6 +36,21 @@ class ClientSocket {
           this.sessionMaps
         );
 
+        socket.conn.on("ping", () => {
+          console.log(
+            `➡️ [${
+              socket.id
+            }] Server sent ping time : ${new Date().getSeconds()}`
+          );
+        });
+
+        socket.conn.on("pong", (latency) => {
+          console.log(
+            `[${
+              socket.id
+            }] Client pong (latency: ${latency}ms) time : ${new Date().getSeconds()}`
+          );
+        });
         socket.on(consts.SOCKET_CONNECTION, async (message) => {
           const { session_id, auth_token, isReConnect } = message as IEventData;
           if (

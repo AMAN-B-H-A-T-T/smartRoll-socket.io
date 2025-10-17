@@ -17,6 +17,8 @@ globalThis.bunSocket = communicationService;
 worker.postMessage({ type: "connect", data: { path: UNIX_SOCKET_URL } });
 console.log(`server is listing of the ${PORT}`);
 
+console.log("Main thread PID:", process.pid);
+
 // Stop the worker gracefully on exit
 process.on("exit", () => {
   console.log("Main thread exiting. Terminating worker...");
